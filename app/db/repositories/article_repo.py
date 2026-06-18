@@ -158,3 +158,37 @@ class ArticleRepository:
         """
         count = await self.collection.count_documents({"url": url}, limit=1)
         return count > 0
+
+    async def find_unsummarized(self, limit: int = 200) -> list[dict]:
+        """
+        Mengambil artikel yang belum memiliki ringkasan AI.
+        Digunakan untuk proses re-summarize massal.
+
+        Returns:
+            list[dict]: Daftar dokumen artikel yang belum diringkas.
+        """
+        query = {
+            "$or": [
+                {"is_summarized": False},
+                {"is_summarized": {"$exists": False}},
+                {"summary": None},
+                {"summary": {"$exists": False}},
+            ]
+        }
+        cursor = self.collection.find(query).limit(limit)
+        return await cursor.to_list(length=limit)
+
+    async def delete_by_date(self, target_date: date, source: Optional[str] = None) -> int:
+        """
+        Menghapus semua artikel pada tanggal tertentu.
+        Opsional: filter berdasarkan sumber portal.
+
+        Returns:
+            int: Jumlah artikel yang berhasil dihapus.
+        """
+        query: dict = {"published_date": str(target_date)}
+        if source:
+            query["source"] = source.lower()
+
+        result = await self.collection.delete_many(query)
+        return result.deleted_count

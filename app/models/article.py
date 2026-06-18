@@ -45,7 +45,8 @@ class ArticleCreate(ArticleBase):
     Berisi field tambahan yang diisi saat proses scraping.
     """
     content: str = Field(..., description="Isi artikel lengkap yang di-scrape", min_length=50)
-    summary: Optional[str] = Field(None, description="Ringkasan 1 paragraf yang dihasilkan oleh AI")
+    summary: Optional[str] = Field(None, description="Ringkasan singkat (maks. 140 karakter) yang dihasilkan oleh AI")
+    tags: list[str] = Field(default_factory=list, description="4 tag/kata kunci SEO yang merepresentasikan isi artikel")
     is_summarized: bool = Field(default=False, description="Status apakah artikel sudah diringkas oleh AI")
     scraped_at: datetime = Field(default_factory=datetime.utcnow, description="Waktu artikel di-scrape")
 
@@ -55,7 +56,8 @@ class ArticleUpdate(BaseModel):
     Schema untuk mengupdate dokumen artikel (partial update / PATCH).
     Semua field bersifat opsional.
     """
-    summary: Optional[str] = Field(None, description="Ringkasan hasil AI yang diperbarui")
+    summary: Optional[str] = Field(None, description="Ringkasan hasil AI yang diperbarui (maks. 140 karakter)")
+    tags: Optional[list[str]] = Field(None, description="4 tag/kata kunci SEO")
     is_summarized: Optional[bool] = None
     generated_article: Optional[str] = Field(None, description="Artikel berita lengkap yang digenerate AI")
     is_generated: Optional[bool] = None
@@ -68,7 +70,8 @@ class ArticleResponse(ArticleBase):
     untuk menjaga payload tetap ringan.
     """
     id: str = Field(..., description="ID unik artikel (MongoDB ObjectId)")
-    summary: Optional[str] = Field(None, description="Ringkasan artikel oleh AI")
+    summary: Optional[str] = Field(None, description="Ringkasan artikel oleh AI (maks. 140 karakter)")
+    tags: list[str] = Field(default_factory=list, description="4 tag/kata kunci SEO")
     is_summarized: bool = Field(default=False)
     generated_article: Optional[str] = Field(None, description="Artikel berita lengkap hasil generate AI")
     is_generated: bool = Field(default=False)
@@ -118,6 +121,17 @@ class GenerateArticleResponse(BaseModel):
     status: str = Field(..., description="Status: success | failed")
     message: str
     generated_article: Optional[str] = Field(None, description="Teks artikel berita yang digenerate")
+
+
+class SummarizeArticleResponse(BaseModel):
+    """
+    Schema respons untuk endpoint summarize satu artikel secara manual.
+    """
+    article_id: str
+    status: str = Field(..., description="Status: success | already_summarized | failed")
+    message: str
+    summary: Optional[str] = Field(None, description="Ringkasan singkat artikel (maks. 140 karakter)")
+    tags: Optional[list[str]] = Field(None, description="4 tag/kata kunci SEO")
 
 
 class ScrapeStatusResponse(BaseModel):
