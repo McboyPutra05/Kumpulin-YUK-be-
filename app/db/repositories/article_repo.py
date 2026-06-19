@@ -37,7 +37,7 @@ class ArticleRepository:
         await self.collection.create_index([("published_date", DESCENDING)])
         await self.collection.create_index([("source", 1)])
         await self.collection.create_index([("url", 1)], unique=True)  # Mencegah duplikasi
-        print("✅ MongoDB indexes created for 'articles' collection.")
+        print("[OK] MongoDB indexes created for 'articles' collection.")
 
     async def insert_one(self, article_data: ArticleCreate) -> str:
         """

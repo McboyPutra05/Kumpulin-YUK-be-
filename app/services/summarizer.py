@@ -129,7 +129,26 @@ Output hanya berupa JSON valid tanpa markdown code block, contoh format:
 
                 # Panggil Gemini API — identik dengan cara article_generator.py
                 response = await model.generate_content_async(prompt)
-                return self._parse_response(response.text.strip())
+
+                # Cek apakah response diblokir safety filter atau kosong
+                if not response.candidates:
+                    raise ValueError(
+                        "Gemini API mengembalikan response kosong (tidak ada candidates). "
+                        "Kemungkinan konten diblokir oleh safety filter."
+                    )
+
+                # Cek apakah candidate pertama memiliki content/text
+                candidate = response.candidates[0]
+                if hasattr(candidate, 'finish_reason') and candidate.finish_reason not in (None, 1):
+                    # finish_reason: 1 = STOP (normal), lainnya = SAFETY/MAX_TOKENS/dll
+                    finish_reason_name = getattr(candidate.finish_reason, 'name', str(candidate.finish_reason))
+                    if finish_reason_name == "SAFETY":
+                        raise ValueError(
+                            f"Response diblokir oleh safety filter (finish_reason={finish_reason_name})."
+                        )
+
+                raw_text = response.text.strip()
+                return self._parse_response(raw_text)
 
             except Exception as e:
                 last_exception = e
@@ -143,17 +162,33 @@ Output hanya berupa JSON valid tanpa markdown code block, contoh format:
                     or "too many requests" in error_str
                 )
 
-                if is_rate_limit and attempt < MAX_RETRIES:
-                    wait_time = RETRY_BASE_DELAY * (2 ** (attempt - 1))
-                    print(
-                        f"   Rate limit! Percobaan {attempt}/{MAX_RETRIES}. "
-                        f"Menunggu {wait_time:.0f} detik..."
-                    )
+                if attempt < MAX_RETRIES:
+                    if is_rate_limit:
+                        wait_time = RETRY_BASE_DELAY * (2 ** (attempt - 1))
+                        print(
+                            f"   [Retry] Rate limit! Percobaan {attempt}/{MAX_RETRIES}. "
+                            f"Menunggu {wait_time:.0f} detik..."
+                        )
+                    else:
+                        wait_time = RETRY_BASE_DELAY * (2 ** (attempt - 1)) / 2
+                        print(
+                            f"   [Retry] Error: {str(e)[:100]}. "
+                            f"Percobaan {attempt}/{MAX_RETRIES}. "
+                            f"Menunggu {wait_time:.0f} detik..."
+                        )
                     await asyncio.sleep(wait_time)
                 else:
-                    raise
+                    print(
+                        f"   [Failed] Semua {MAX_RETRIES} percobaan gagal. "
+                        f"Error terakhir: {str(e)[:150]}"
+                    )
 
-        raise last_exception
+        # Semua retry gagal — return fallback daripada raise exception
+        print("   [Fallback] Menggunakan ringkasan default karena API gagal.")
+        return (
+            "Ringkasan tidak tersedia.",
+            ["berita", "indonesia", "nasional", "terkini"],
+        )
 
     async def summarize_batch(
         self,

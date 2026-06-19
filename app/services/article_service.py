@@ -121,12 +121,12 @@ class ArticleService:
             )
 
         try:
-            print(f"\n🤖 Summarizing artikel ID: {article_id[:8]}...")
+            print(f"\n[AI] Summarizing artikel ID: {article_id[:8]}...")
             summary, tags = await summarizer_service.summarize(doc["content"])
 
             update_data = ArticleUpdate(summary=summary, tags=tags, is_summarized=True)
             await self.repo.update_one(article_id, update_data=update_data)
-            print(f"   ✅ Artikel berhasil diringkas.")
+            print(f"   [OK] Artikel berhasil diringkas.")
 
             return SummarizeArticleResponse(
                 article_id=article_id,
@@ -137,7 +137,7 @@ class ArticleService:
             )
 
         except Exception as e:
-            print(f"   ❌ Gagal summarisasi artikel {article_id}: {e}")
+            print(f"   [Error] Gagal summarisasi artikel {article_id}: {e}")
             return SummarizeArticleResponse(
                 article_id=article_id,
                 status="failed",
@@ -177,7 +177,7 @@ class ArticleService:
             )
 
         try:
-            print(f"\n🤖 Generating artikel untuk ID: {article_id[:8]}...")
+            print(f"\n[AI] Generating artikel untuk ID: {article_id[:8]}...")
             generated_text = await article_generator_service.generate(doc)
 
             # Simpan hasil ke database
@@ -186,7 +186,7 @@ class ArticleService:
                 is_generated=True,
             )
             await self.repo.update_one(article_id, update_data=update_data)
-            print(f"   ✅ Artikel berhasil digenerate dan disimpan.")
+            print(f"   [OK] Artikel berhasil digenerate dan disimpan.")
 
             return GenerateArticleResponse(
                 article_id=article_id,
@@ -196,7 +196,7 @@ class ArticleService:
             )
 
         except Exception as e:
-            print(f"   ❌ Gagal generate artikel {article_id}: {e}")
+            print(f"   [Error] Gagal generate artikel {article_id}: {e}")
             return GenerateArticleResponse(
                 article_id=article_id,
                 status="failed",
@@ -242,7 +242,7 @@ class ArticleService:
             # Simpan artikel yang belum ada (deduplikasi berdasarkan URL)
             for raw in raw_articles:
                 if await self.repo.url_exists(raw.url):
-                    print(f"   ⏭️ Skip (sudah ada): {raw.url[:60]}...")
+                    print(f"   [Skip] Skip (sudah ada): {raw.url[:60]}...")
                     continue
 
                 article_data = ArticleCreate(
@@ -283,7 +283,7 @@ class ArticleService:
         """
         deleted_count = await self.repo.delete_by_date(target_date, source=source)
         source_label = source.capitalize() if source else "semua sumber"
-        print(f"🗑️ Dihapus {deleted_count} artikel tanggal {target_date} dari {source_label}.")
+        print(f"[Delete] Dihapus {deleted_count} artikel tanggal {target_date} dari {source_label}.")
         return {"deleted": deleted_count, "date": str(target_date), "source": source or "all"}
 
     async def _summarize_articles(self, article_ids: list[str]) -> int:
@@ -308,7 +308,7 @@ class ArticleService:
                 await self.repo.update_one(article_id, update_data=update_data)
                 summarized_count += 1
             except Exception as e:
-                print(f"   ❌ Gagal summarisasi artikel {article_id}: {e}")
+                print(f"   [Error] Gagal summarisasi artikel {article_id}: {e}")
 
         return summarized_count
 
@@ -325,13 +325,13 @@ class ArticleService:
         total_found = len(docs)
 
         if total_found == 0:
-            print("✅ Semua artikel sudah memiliki ringkasan.")
+            print("[OK] Semua artikel sudah memiliki ringkasan.")
             return {"found": 0, "summarized": 0}
 
-        print(f"\n🤖 Memulai re-summarize {total_found} artikel yang belum diringkas...")
+        print(f"\n[AI] Memulai re-summarize {total_found} artikel yang belum diringkas...")
         article_ids = [str(doc["_id"]) for doc in docs]
         summarized_count = await self._summarize_articles(article_ids)
-        print(f"✅ Re-summarize selesai: {summarized_count}/{total_found} artikel berhasil.")
+        print(f"[Done] Re-summarize selesai: {summarized_count}/{total_found} artikel berhasil.")
 
         return {"found": total_found, "summarized": summarized_count}
 

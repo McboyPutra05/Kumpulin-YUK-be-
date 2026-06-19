@@ -40,7 +40,7 @@ class KumparanScraper(BaseScraper):
                 all_urls.append(full_url)
                 found_count += 1
 
-        print(f"   📄 Halaman Trending: ditemukan {found_count} URL.")
+        print(f"   [Page] Halaman Trending: ditemukan {found_count} URL.")
         return list(dict.fromkeys(all_urls))
 
     async def scrape_article(self, url: str, target_date: date) -> Optional[RawArticle]:

@@ -31,23 +31,24 @@ class Liputan6Scraper(BaseScraper):
             # Cari link artikel di indeks
             article_links = soup.select("a[href*='liputan6.com']")
             
-            found_count = 0
+            new_found = 0
             for a_tag in article_links:
                 href = a_tag.get("href", "")
                 if href and len(href) > 40 and "/read/" in href:
-                    all_urls.append(href)
-                    found_count += 1
+                    if href not in all_urls:
+                        all_urls.append(href)
+                        new_found += 1
 
-            print(f"   📄 Halaman {page}: ditemukan {found_count} URL.")
+            print(f"   [Page] Halaman {page}: ditemukan {new_found} URL baru.")
             
-            if found_count == 0:
+            if new_found == 0:
                 break
                 
             page += 1
             if page > 50:
                 break
 
-        return list(dict.fromkeys(all_urls))
+        return all_urls
 
     async def scrape_article(self, url: str, target_date: date) -> Optional[RawArticle]:
         html = await self._fetch(url)

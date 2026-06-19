@@ -15,12 +15,13 @@ class CNNIndonesiaScraper(BaseScraper):
 
     async def get_article_urls_by_date(self, target_date: date) -> list[str]:
         date_str = target_date.strftime("%Y/%m/%d")
+        date_pattern = target_date.strftime("%Y%m%d")
         all_urls: list[str] = []
         page = 1
 
         while True:
-            # Contoh URL: https://www.cnnindonesia.com/indeks/2?date=2026/06/18&p=1
-            index_url = f"{self.BASE_INDEX_URL}?date={date_str}&p={page}"
+            # Contoh URL: https://www.cnnindonesia.com/indeks/2?date=2026/06/18&page=1
+            index_url = f"{self.BASE_INDEX_URL}?date={date_str}&page={page}"
             html = await self._fetch(index_url)
 
             if not html:
@@ -31,25 +32,25 @@ class CNNIndonesiaScraper(BaseScraper):
             # Cari link artikel
             article_links = soup.select("a[href*='cnnindonesia.com']")
             
-            found_count = 0
+            new_found = 0
             for a_tag in article_links:
                 href = a_tag.get("href", "")
                 if href and len(href) > 40 and not href.startswith("https://www.cnnindonesia.com/indeks"):
-                    # URL artikel spesifik biasanya mengandung format timestamp/id (ada tanda -)
-                    if "-" in href:
-                        all_urls.append(href)
-                        found_count += 1
+                    if date_pattern in href and "-" in href:
+                        if href not in all_urls:
+                            all_urls.append(href)
+                            new_found += 1
 
-            print(f"   📄 Halaman {page}: ditemukan {found_count} URL.")
+            print(f"   [Page] Halaman {page}: ditemukan {new_found} URL baru.")
             
-            if found_count == 0:
+            if new_found == 0:
                 break
                 
             page += 1
             if page > 50:  # Batas maksimal untuk menghindari loop tak terbatas
                 break
 
-        return list(dict.fromkeys(all_urls))
+        return all_urls
 
     async def scrape_article(self, url: str, target_date: date) -> Optional[RawArticle]:
         html = await self._fetch(url)

@@ -44,7 +44,7 @@ class KompasScraper(BaseScraper):
             html = await self._fetch(index_url)
 
             if not html:
-                print(f"   ⚠️ Halaman {page} tidak dapat diakses, berhenti.")
+                print(f"   [!] Halaman {page} tidak dapat diakses, berhenti.")
                 break
 
             soup = self._parse_html(html)
@@ -58,7 +58,7 @@ class KompasScraper(BaseScraper):
                 article_links = soup.select(".articleList a[href*='kompas.com']")
 
             if not article_links:
-                print(f"   ℹ️ Tidak ada artikel di halaman {page}, berhenti iterasi.")
+                print(f"   [Info] Tidak ada artikel di halaman {page}, berhenti iterasi.")
                 break
 
             found_count = 0
@@ -68,11 +68,11 @@ class KompasScraper(BaseScraper):
                     all_urls.append(href)
                     found_count += 1
 
-            print(f"   📄 Halaman {page}: ditemukan {found_count} URL.")
+            print(f"   [Page] Halaman {page}: ditemukan {found_count} URL.")
             page += 1
 
             if page > 50:
-                print("   ⚠️ Batas maksimal halaman (50) tercapai.")
+                print("   [!] Batas maksimal halaman (50) tercapai.")
                 break
 
         return list(dict.fromkeys(all_urls))
@@ -95,7 +95,7 @@ class KompasScraper(BaseScraper):
             or soup.select_one("h1")
         )
         if not title_tag:
-            print(f"   ⚠️ Judul tidak ditemukan di: {url}")
+            print(f"   [!] Judul tidak ditemukan di: {url}")
             return None
         title = clean_text(title_tag.get_text())
 
@@ -107,7 +107,7 @@ class KompasScraper(BaseScraper):
             or soup.select_one("div[class*='read__content']")
         )
         if not content_div:
-            print(f"   ⚠️ Konten tidak ditemukan di: {url}")
+            print(f"   [!] Konten tidak ditemukan di: {url}")
             return None
 
         # Ambil semua paragraf, hilangkan elemen iklan/promo

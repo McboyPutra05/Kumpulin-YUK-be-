@@ -93,19 +93,19 @@ class BaseScraper(ABC):
                 return response.text
 
             except httpx.HTTPStatusError as e:
-                print(f"⚠️ HTTP Error {e.response.status_code} saat mengambil {url} (attempt {attempt})")
+                print(f"[!] HTTP Error {e.response.status_code} saat mengambil {url} (attempt {attempt})")
                 if e.response.status_code == 404:
                     return None  # 404 tidak perlu di-retry
             except httpx.RequestError as e:
-                print(f"⚠️ Request gagal: {e} (attempt {attempt})")
+                print(f"[!] Request gagal: {e} (attempt {attempt})")
 
             if attempt < settings.scraper_max_retries:
                 # Exponential backoff: 2, 4, 8 detik...
                 wait_time = 2 ** attempt
-                print(f"   ↳ Menunggu {wait_time}s sebelum retry...")
+                print(f"   [-] Menunggu {wait_time}s sebelum retry...")
                 await asyncio.sleep(wait_time)
 
-        print(f"❌ Gagal mengambil {url} setelah {settings.scraper_max_retries} percobaan.")
+        print(f"[Error] Gagal mengambil {url} setelah {settings.scraper_max_retries} percobaan.")
         return None
 
     def _parse_html(self, html: str) -> BeautifulSoup:
@@ -160,11 +160,11 @@ class BaseScraper(ABC):
         Returns:
             list[RawArticle]: Daftar artikel yang berhasil di-scrape.
         """
-        print(f"\n📰 [{self.source_name.upper()}] Scraping berita tanggal: {target_date}")
+        print(f"\n[Scrape] [{self.source_name.upper()}] Scraping berita tanggal: {target_date}")
         
         # Langkah 1: Ambil semua URL artikel
         urls = await self.get_article_urls_by_date(target_date)
-        print(f"   ✅ Ditemukan {len(urls)} URL artikel.")
+        print(f"   [OK] Ditemukan {len(urls)} URL artikel.")
 
         if not urls:
             return []
@@ -177,5 +177,5 @@ class BaseScraper(ABC):
             if article:
                 articles.append(article)
 
-        print(f"   🏁 Selesai. {len(articles)}/{len(urls)} artikel berhasil di-scrape.")
+        print(f"   [Done] Selesai. {len(articles)}/{len(urls)} artikel berhasil di-scrape.")
         return articles

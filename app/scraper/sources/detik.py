@@ -64,7 +64,7 @@ class DetikScraper(BaseScraper):
                 article_links = soup.select("article a[href*='detik.com']")
 
             if not article_links:
-                print(f"   ℹ️ Tidak ada hasil di halaman {page}, berhenti.")
+                print(f"   [Info] Tidak ada hasil di halaman {page}, berhenti.")
                 break
 
             found_count = 0
@@ -77,7 +77,7 @@ class DetikScraper(BaseScraper):
                     all_urls.append(href)
                     found_count += 1
 
-            print(f"   📄 Halaman {page}: ditemukan {found_count} URL.")
+            print(f"   [Page] Halaman {page}: ditemukan {found_count} URL.")
             page += 1
 
             if page > 50:
