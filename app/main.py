@@ -26,6 +26,13 @@ async def lifespan(app: FastAPI):
     await connect_to_mongo()
     print("[OK] Database connection established.")
     
+    # Setup Indexes
+    from app.db.client import get_database
+    from app.db.repositories.user_repo import UserRepository
+    db = get_database()
+    user_repo = UserRepository(db)
+    await user_repo.setup_indexes()
+    
     yield  # Aplikasi berjalan di sini
     
     # --- Shutdown ---

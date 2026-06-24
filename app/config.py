@@ -40,6 +40,15 @@ class Settings(BaseSettings):
     # Jumlah maksimal retry jika request gagal
     scraper_max_retries: int = 3
 
+    # --- Auth (JWT) ---
+    secret_key: str = "supersecretkey-ganti-di-production" # Harusnya random string yang kuat
+    algorithm: str = "HS256"
+    access_token_expire_minutes: int = 60 * 24 * 7 # 7 hari
+
+    # --- Email (SMTP) ---
+    smtp_email: str = ""
+    smtp_password: str = ""
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
